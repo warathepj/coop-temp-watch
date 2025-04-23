@@ -2,21 +2,31 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Thermometer } from "lucide-react";
+import { format } from 'date-fns';
 
 interface TemperatureCardProps {
   title: string;
   temperature: number;
   timestamp: string;
+  thresholds: {
+    low: number;
+    high: number;
+    warning: number;
+  };
 }
 
-const getTemperatureColor = (temp: number) => {
-  if (temp >= 35) return "text-temp-critical";
-  if (temp >= 30) return "text-temp-warning";
-  return "text-temp-normal";
+const getTemperatureColor = (
+  temp: number,
+  { low, warning, high }: { low: number; warning: number; high: number }
+) => {
+  if (temp >= high) return "text-temp-critical"; // Red
+  if (temp >= warning) return "text-temp-warning"; // Orange
+  if (temp <= low) return "text-blue-500"; // Blue
+  return "text-temp-normal"; // Green
 };
 
-const TemperatureCard = ({ title, temperature, timestamp }: TemperatureCardProps) => {
-  const tempColor = getTemperatureColor(temperature);
+const TemperatureCard = ({ title, temperature, timestamp, thresholds }: TemperatureCardProps) => {
+  const tempColor = getTemperatureColor(temperature, thresholds);
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -29,7 +39,7 @@ const TemperatureCard = ({ title, temperature, timestamp }: TemperatureCardProps
           <span className={tempColor}>{temperature}°C</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Last updated: {timestamp}
+          Last updated: {format(new Date(timestamp), 'PPpp')}
         </p>
       </CardContent>
     </Card>
