@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { FileExport } from "lucide-react"; // Using allowed Lucide icon
+import { FileText } from "lucide-react"; // Changed from FileExport to FileText which is a valid icon
 
 interface ExportButtonProps {
   section: string;
@@ -48,7 +48,7 @@ const TemperatureExportButton: React.FC<ExportButtonProps> = ({ section, sensors
 
   return (
     <Button onClick={handleExport} variant="outline" className="gap-1">
-      <FileExport className="w-4 h-4" />
+      <FileText className="w-4 h-4" />
       Export CSV
     </Button>
   );
