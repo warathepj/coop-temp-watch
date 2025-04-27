@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import MonitoringSection from '@/components/MonitoringSection';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const now = new Date();
 const mockValues = (base: number) =>
@@ -34,10 +36,11 @@ const Index = () => {
   const [procThresholds, setProcThresholds] = useState({ ...defaultThreshold });
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-7xl">
+    <div className="jupiter min-h-screen bg-background p-6">
+      <Button asChild><Link to="/dashboard">Dashboard</Link></Button>
+      <div className="mars mx-auto max-w-7xl">
         <h1 className="text-3xl font-bold mb-8">Temperature Monitoring Dashboard</h1>
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+        <div className="neptune grid gap-6 grid-cols-1 lg:grid-cols-3">
           <MonitoringSection
             title="Coop Temperatures"
             temperatures={mockData.coops}
