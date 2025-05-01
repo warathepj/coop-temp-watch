@@ -6,7 +6,13 @@ interface TemperatureMessage {
   data: any;
 }
 
-const defaultThreshold = { low: 20, warning: 28, high: 34 };
+// Updated thresholds based on your requirements
+const defaultThresholds = {
+  coops: { min: 18, max: 29 },
+  ventilation: { min: 18, max: 28 },
+  processing: { min: 17, max: 23 }, // For egg washing
+  storage: { min: 8, max: 15 }      // For egg storage
+};
 
 // Helper function to transform coop data
 const transformCoopData = (topic: string, data: any) => {
@@ -49,10 +55,11 @@ const Dashboard = () => {
   });
   const [error, setError] = useState<string | null>(null);
   
-  // Add threshold states
-  const [coopThresholds, setCoopThresholds] = useState({ ...defaultThreshold });
-  const [ventThresholds, setVentThresholds] = useState({ ...defaultThreshold });
-  const [procThresholds, setProcThresholds] = useState({ ...defaultThreshold });
+  // Replace the old threshold states with the new range-based ones
+  const [coopThresholds, setCoopThresholds] = useState(defaultThresholds.coops);
+  const [ventThresholds, setVentThresholds] = useState(defaultThresholds.ventilation);
+  const [procThresholds, setProcThresholds] = useState(defaultThresholds.processing);
+  const [storageThresholds, setStorageThresholds] = useState(defaultThresholds.storage);
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:3001');
@@ -156,6 +163,7 @@ const Dashboard = () => {
             thresholds={procThresholds}
             onThresholdChange={setProcThresholds}
           />
+          {/* You might want to add a new section for egg storage if it exists */}
         </div>
       </div>
     </div>

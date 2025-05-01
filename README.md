@@ -1,73 +1,129 @@
-# Welcome to your Lovable project
+# ซอร์สโค้ดนี้ ใช้สำหรับเป็นตัวอย่างเท่านั้น ถ้านำไปใช้งานจริง ผู้ใช้ต้องจัดการเรื่องความปลอดภัย และ ประสิทธิภาพด้วยตัวเอง
 
-## Project info
+# HenHouse Manager
 
-**URL**: https://lovable.dev/projects/0272c7c7-f013-4b02-8417-a8c822a71e34
+A comprehensive IoT system for monitoring and managing temperatures in hen house operations.
 
-## How can I edit this code?
+## Overview
 
-There are several ways of editing your application.
+HenHouse Manager provides real-time temperature monitoring for different areas of a poultry facility, including multiple coops, ventilation systems, and processing areas. The system helps maintain optimal temperature conditions for hen health and egg production.
 
-**Use Lovable**
+## System Components
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0272c7c7-f013-4b02-8417-a8c822a71e34) and start prompting.
+The HenHouse Manager consists of four main components:
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **coop-temp-watch**: React frontend application for temperature monitoring dashboard
+2. **coop-vision-architect**: (Simulator) Enhanced visualization frontend with additional features
+3. **main-control-backend**: Core backend service for data processing and management
+4. **simulator-backend**: Testing utility that generates simulated temperature data
 
-**Use your preferred IDE**
+## Features
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Real-time temperature monitoring for multiple coops (A, B, C)
+- Ventilation system temperature tracking
+- Processing area temperature monitoring
+- Egg storage temperature monitoring
+- Customizable temperature thresholds for different areas
+- Visual alerts for out-of-range temperatures
+- WebSocket-based real-time updates
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Installation
 
-Follow these steps:
+### Prerequisites
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Node.js (v14 or higher)
+- npm or yarn
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Setup Steps
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. **Clone the repository**:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+# Simulator
+git clone https://github.com/warathepj/coop-vision-architect.git
+# Simulator Backend
+git clone https://github.com/warathepj/henhouse-sim-backend.git
+# Main Control
+git clone https://github.com/warathepj/coop-temp-watch.git
+# Main Control Backend
+git clone https://github.com/warathepj/henhouse-main-control-backend.git
+
+```
+
+2. **Install dependencies for all components**:
+
+```bash
+# Install frontend dependencies
+cd coop-temp-watch
+npm install
+cd coop-vision-architect
+npm install
+
+# Install backend dependencies
+cd henhouse-main-control-backend
+npm install
+cd henhouse-sim-backend
+npm install
+```
+
+3. **Configure environment variables**:
+
+- Copy `.env.example` to `.env` in each component directory
+- Update the variables with your specific configuration
+
+## Running the Application
+
+1. **Start the backend services**:
+
+```bash
+# Start main backend
+cd henhouse-main-control-backend
+npm run dev
+
+# Start simulator in a new terminal
+cd henhouse-sim-backend
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+2. **Start the frontend applications**:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Start monitoring dashboard
+cd coop-temp-watch
+npm run dev
 
-**Use GitHub Codespaces**
+# Start enhanced visualization
+cd coop-vision-architect
+npm run dev
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Technology Stack
 
-## What technologies are used for this project?
+- **Frontend**:
 
-This project is built with:
+  - React
+  - TypeScript
+  - Vite
+  - shadcn-ui
+  - Tailwind CSS
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Backend**:
+  - Node.js
+  - WebSocket
+  - MQTT
 
-## How can I deploy this project?
+## Development
 
-Simply open [Lovable](https://lovable.dev/projects/0272c7c7-f013-4b02-8417-a8c822a71e34) and click on Share -> Publish.
+### Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+```
+HenHouse-Manager/
+├── coop-temp-watch/        # Main monitoring dashboard
+├── coop-vision-architect/  # Enhanced visualization frontend (Simulator)
+├── main-control-backend/   # Core backend service
+└── simulator-backend/      # Temperature simulation service
+```
 
-Yes, you can!
+## License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+MIT

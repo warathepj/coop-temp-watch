@@ -1,113 +1,80 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TemperatureCard from './TemperatureCard';
-import TemperatureTrendChart from './TemperatureTrendChart';
-import TemperatureThresholdConfig from './TemperatureThresholdConfig';
-import TemperatureExportButton from './TemperatureExportButton';
-import TemperatureAlertHistory from './TemperatureAlertHistory';
+import React from 'react';
+
+interface Temperature {
+  id: string;
+  name: string;
+  value: number;
+  timestamp: string;
+}
+
+interface ThresholdRange {
+  min: number;
+  max: number;
+}
 
 interface MonitoringSectionProps {
   title: string;
-  temperatures: {
-    id: string;
-    name: string;
-    value: number;
-    timestamp: string;
-    values?: { value: number; timestamp: string }[]; // for trend chart
-  }[];
-  thresholds: {
-    low: number;
-    warning: number;
-    high: number;
-  };
-  onThresholdChange: (t: { low: number; warning: number; high: number }) => void;
+  temperatures: Temperature[];
+  thresholds: ThresholdRange;
+  onThresholdChange: (thresholds: ThresholdRange) => void;
 }
 
-type AlertType = "low" | "high" | "warning";
-interface AlertEvent {
-  sensorName: string;
-  value: number;
-  timestamp: string;
-  alertType: AlertType;
-}
-
-// Helper to check if value crosses thresholds
-function getAlertType(value: number, thresholds: { low: number; warning: number; high: number }): AlertType | null {
-  if (value >= thresholds.high) return "high";
-  if (value >= thresholds.warning) return "warning";
-  if (value <= thresholds.low) return "low";
-  return null;
-}
-
-const MonitoringSection = ({
+const MonitoringSection: React.FC<MonitoringSectionProps> = ({
   title,
   temperatures,
   thresholds,
   onThresholdChange
-}: MonitoringSectionProps) => {
-  // For trend chart: pass the history for each sensor, default to [latest value] if missing
-  const historyData = temperatures.map(temp => ({
-    id: temp.id,
-    name: temp.name,
-    values: temp.values ?? [{ value: temp.value, timestamp: temp.timestamp }],
-  }));
-
-  // Alert History State (recent alerts: newest first; only alert events)
-  const [alerts, setAlerts] = useState<AlertEvent[]>([]);
-  // For deduplication and only logging new threshold events as they happen on render
-  const lastAlertMap = useRef<{ [sensorId: string]: AlertType | null }>({});
-
-  useEffect(() => {
-    temperatures.forEach((temp) => {
-      const alertType = getAlertType(temp.value, thresholds);
-      const prevAlert = lastAlertMap.current[temp.id];
-
-      if (alertType && (!prevAlert || prevAlert !== alertType)) {
-        setAlerts((prev) => [
-          {
-            sensorName: temp.name,
-            value: temp.value,
-            timestamp: temp.timestamp,
-            alertType,
-          },
-          ...prev.slice(0,19), // keep max 20 alerts
-        ]);
-      }
-      lastAlertMap.current[temp.id] = alertType;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [temperatures, thresholds]);
+}) => {
+  // Function to check if temperature is out of range
+  const isOutOfRange = (value: number): boolean => {
+    return value < thresholds.min || value > thresholds.max;
+  };
 
   return (
-    <Card className="col-span-full md:col-span-2 lg:col-span-1">
-      <CardHeader className="flex flex-col gap-2 items-start md:items-stretch">
-        <CardTitle>{title}</CardTitle>
-        <div className="flex flex-wrap gap-2 items-center">
-          <TemperatureExportButton section={title} sensors={temperatures} />
+    <div className="bg-card rounded-lg shadow-md p-4">
+      <h2 className="text-xl font-semibold mb-4">{title}</h2>
+      
+      {/* Threshold controls */}
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-sm font-medium">Min (°C)</label>
+          <input
+            type="number"
+            value={thresholds.min}
+            onChange={(e) => onThresholdChange({ ...thresholds, min: Number(e.target.value) })}
+            className="w-full p-1 border rounded"
+          />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <TemperatureThresholdConfig
-          thresholds={thresholds}
-          onChange={onThresholdChange}
-          labelPrefix={title}
-        />
-        <TemperatureTrendChart data={historyData} />
-        <TemperatureAlertHistory alerts={alerts} />
-        <div className="grid gap-4 grid-cols-1">
-          {temperatures.map((temp) => (
-            <TemperatureCard
-              key={temp.id}
-              title={temp.name}
-              temperature={temp.value}
-              timestamp={temp.timestamp}
-              thresholds={thresholds}
-            />
-          ))}
+        <div>
+          <label className="block text-sm font-medium">Max (°C)</label>
+          <input
+            type="number"
+            value={thresholds.max}
+            onChange={(e) => onThresholdChange({ ...thresholds, max: Number(e.target.value) })}
+            className="w-full p-1 border rounded"
+          />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      {/* Temperature readings */}
+      <div className="space-y-2">
+        {temperatures.length === 0 ? (
+          <p className="text-muted-foreground">No data available</p>
+        ) : (
+          temperatures.map((temp) => (
+            <div key={temp.id} className="flex justify-between items-center border-b pb-2">
+              <span>{temp.name}</span>
+              <span 
+                className={isOutOfRange(temp.value) ? "text-red-600 font-bold" : ""}
+              >
+                {temp.value.toFixed(1)}°C
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 };
 

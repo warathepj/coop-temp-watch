@@ -1,64 +1,169 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import MonitoringSection from '@/components/MonitoringSection';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 
-const now = new Date();
-const mockValues = (base: number) =>
-  Array.from({ length: 24 }, (_, i) => ({
-    value: base + Math.sin(i / 3) * 2 + Math.random(),
-    timestamp: new Date(now.getTime() - (23 - i) * 60 * 60 * 1000).toISOString(),
-  }));
+interface TemperatureMessage {
+  topic: string;
+  data: any;
+}
 
-const mockData = {
-  coops: [
-    { id: 'coop-a', name: 'Coop A', value: 25.5, timestamp: now.toISOString(), values: mockValues(25.5) },
-    { id: 'coop-b', name: 'Coop B', value: 26.2, timestamp: now.toISOString(), values: mockValues(26.2) },
-    { id: 'coop-c', name: 'Coop C', value: 28.7, timestamp: now.toISOString(), values: mockValues(28.7) },
-  ],
-  ventilation: [
-    { id: 'vent-1', name: 'Main Vent', value: 22.1, timestamp: now.toISOString(), values: mockValues(22.1) },
-    { id: 'vent-2', name: 'Secondary Vent', value: 23.4, timestamp: now.toISOString(), values: mockValues(23.4) },
-  ],
-  processing: [
-    { id: 'proc-1', name: 'Processing Area 1', value: 18.5, timestamp: now.toISOString(), values: mockValues(18.5) },
-    { id: 'proc-2', name: 'Storage Room', value: 16.8, timestamp: now.toISOString(), values: mockValues(16.8) },
-    { id: 'proc-3', name: 'Packaging Zone', value: 19.2, timestamp: now.toISOString(), values: mockValues(19.2) },
-  ],
+// Updated thresholds based on your requirements
+const defaultThresholds = {
+  coops: { min: 18, max: 29 },
+  ventilation: { min: 18, max: 28 },
+  processing: { min: 17, max: 23 }, // For egg washing
+  storage: { min: 8, max: 15 }      // For egg storage
 };
 
-const defaultThreshold = { low: 20, warning: 28, high: 34 };
+// Helper function to transform coop data
+const transformCoopData = (topic: string, data: any) => {
+  const coopId = topic.split('/')[2]; // Extract 'a', 'b', or 'c'
+  return Object.entries(data).map(([location, value]) => ({
+    id: `${coopId}-${location}`,
+    name: `Coop ${coopId.toUpperCase()} ${location}`,
+    value: value as number,
+    timestamp: new Date().toISOString()
+  }));
+};
 
 const Index = () => {
-  const [coopThresholds, setCoopThresholds] = useState({ ...defaultThreshold });
-  const [ventThresholds, setVentThresholds] = useState({ ...defaultThreshold });
-  const [procThresholds, setProcThresholds] = useState({ ...defaultThreshold });
+  const [data, setData] = useState<{
+    coops: Array<{
+      id: string;
+      name: string;
+      value: number;
+      timestamp: string;
+      values?: Array<{ value: number; timestamp: string }>;
+    }>;
+    ventilation: Array<{
+      id: string;
+      name: string;
+      value: number;
+      timestamp: string;
+      values?: Array<{ value: number; timestamp: string }>;
+    }>;
+    processing: Array<{
+      id: string;
+      name: string;
+      value: number;
+      timestamp: string;
+      values?: Array<{ value: number; timestamp: string }>;
+    }>;
+  }>({
+    coops: [],
+    ventilation: [],
+    processing: []
+  });
+  const [error, setError] = useState<string | null>(null);
+  
+  // Replace the old threshold states with the new range-based ones
+  const [coopThresholds, setCoopThresholds] = useState(defaultThresholds.coops);
+  const [ventThresholds, setVentThresholds] = useState(defaultThresholds.ventilation);
+  const [procThresholds, setProcThresholds] = useState(defaultThresholds.processing);
+  const [storageThresholds, setStorageThresholds] = useState(defaultThresholds.storage);
+
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:3001');
+
+    ws.onopen = () => {
+      console.log('Connected to WebSocket server');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message: TemperatureMessage = JSON.parse(event.data);
+        
+        // Transform the data based on the topic
+        switch (message.topic) {
+          case 'farm/coops/a/temperature':
+          case 'farm/coops/b/temperature':
+          case 'farm/coops/c/temperature':
+            const newCoopData = transformCoopData(message.topic, message.data);
+            setData(prev => {
+              // Create a map of existing coops by ID for easy lookup
+              const coopMap = new Map(prev.coops.map(coop => [coop.id, coop]));
+              
+              // Add or update with new coop data
+              newCoopData.forEach(coop => {
+                coopMap.set(coop.id, coop);
+              });
+              
+              return {
+                ...prev,
+                coops: Array.from(coopMap.values())
+              };
+            });
+            break;
+          case 'farm/ventilation/temperature':
+            setData(prev => ({
+              ...prev,
+              ventilation: Object.entries(message.data).map(([id, value]) => ({
+                id,
+                name: id.charAt(0).toUpperCase() + id.slice(1),
+                value: value as number,
+                timestamp: new Date().toISOString()
+              }))
+            }));
+            break;
+          case 'farm/processing/temperature':
+            setData(prev => ({
+              ...prev,
+              processing: Object.entries(message.data).map(([id, value]) => ({
+                id,
+                name: id.charAt(0).toUpperCase() + id.slice(1),
+                value: value as number,
+                timestamp: new Date().toISOString()
+              }))
+            }));
+            break;
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    };
+
+    ws.onerror = (event) => {
+      setError('WebSocket error occurred');
+      console.error('WebSocket error:', event);
+    };
+
+    ws.onclose = () => {
+      console.log('Disconnected from WebSocket server');
+    };
+
+    // Cleanup on unmount
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div className="jupiter min-h-screen bg-background p-6">
-      <Button asChild><Link to="/dashboard">Dashboard</Link></Button>
       <div className="mars mx-auto max-w-7xl">
         <h1 className="text-3xl font-bold mb-8">Temperature Monitoring Dashboard</h1>
         <div className="neptune grid gap-6 grid-cols-1 lg:grid-cols-3">
           <MonitoringSection
             title="Coop Temperatures"
-            temperatures={mockData.coops}
+            temperatures={data.coops}
             thresholds={coopThresholds}
             onThresholdChange={setCoopThresholds}
           />
           <MonitoringSection
             title="Ventilation System"
-            temperatures={mockData.ventilation}
+            temperatures={data.ventilation}
             thresholds={ventThresholds}
             onThresholdChange={setVentThresholds}
           />
           <MonitoringSection
             title="Processing Areas"
-            temperatures={mockData.processing}
+            temperatures={data.processing}
             thresholds={procThresholds}
             onThresholdChange={setProcThresholds}
           />
+          {/* You might want to add a new section for egg storage if it exists */}
         </div>
       </div>
     </div>
